@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BP Tracker Pro | Blood Pressure Monitoring</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --danger: #e63946;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --normal-bp: #2a9d8f;
+            --elevated-bp: #e9c46a;
+            --high-bp: #f4a261;
+            --very-high-bp: #e76f51;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+        
+        .logo h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+        
+        .app-info {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .info-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .info-item .label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .bp-status {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .normal {
+            background: rgba(42, 157, 143, 0.2);
+            color: var(--normal-bp);
+        }
+        
+        .elevated {
+            background: rgba(233, 196, 106, 0.2);
+            color: var(--elevated-bp);
+        }
+        
+        .high {
+            background: rgba(244, 162, 97, 0.2);
+            color: var(--high-bp);
+        }
+        
+        .very-high {
+            background: rgba(231, 111, 81, 0.2);
+            color: var(--very-high-bp);
+        }
+        
+        .history-list {
+            list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-date {
+            font-weight: 600;
+        }
+        
+        .history-value {
+            font-weight: 700;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            padding: 20px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .app-info {
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <h1>BP Tracker Pro</h1>
+            </div>
+            <div class="app-info">
+                <div class="info-item">
+                    <span class="value" id="current-date">--/--/----</span>
+                    <span class="label">Today</span>
+                </div>
+                <div class="info-item">
+                    <span class="value" id="last-reading">--/--</span>
+                    <span class="label">Last Reading</span>
+                </div>
+                <div class="info-item">
+                    <span class="value" id="readings-count">0</span>
+                    <span class="label">Total Readings</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-column">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">New Reading</h2>
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <form id="bp-form">
+                        <div class="form-group">
+                            <label for="sys">Systolic (MAX) *</label>
+                            <input type="number" class="form-control" id="sys" placeholder="e.g., 120" required min="70" max="200">
+                        </div>
+                        <div class="form-group">
+                            <label for="dia">Diastolic (MIN) *</label>
+                            <input type="number" class="form-control" id="dia" placeholder="e.g., 80" required min="40" max="130">
+                        </div>
+                        <div class="form-group">
+                            <label for="pulse">Heart Rate (FC) *</label>
+                            <input type="number" class="form-control" id="pulse" placeholder="e.g., 72" required min="40" max="200">
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Notes (Optional)</label>
+                            <input type="text" class="form-control" id="notes" placeholder="e.g., After exercise">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Save Reading</button>
+                    </form>
+                    
+                    <div id="bp-result" class="bp-status">
+                        <i class="fas fa-info-circle"></i> Enter your reading to see analysis
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Daily Average</h2>
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="avg-sys">--</div>
+                            <div class="stat-label">Avg SYS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avg-dia">--</div>
+                            <div class="stat-label">Avg DIA</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avg-pulse">--</div>
+                            <div class="stat-label">Avg Pulse</div>
+                        </div>
+                    </div>
+                    <div class="bp-status normal">
+                        <i class="fas fa-check-circle"></i> Calculated from last 3 readings
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Blood Pressure History</h2>
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <ul class="history-list" id="history-list">
+                        <li class="history-item">
+                            <span class="history-date">No data yet</span>
+                            <span class="history-value">--/--</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Progress Chart</h2>
+                        <i class="fas fa-chart-area"></i>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="bp-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>BP Tracker Pro - Monitor your blood pressure and maintain cardiovascular health</p>
+            <p>© 2023 Blood Pressure Tracker | For demonstration purposes only</p>
+        </footer>
+    </div>
+
+    <div class="modal" id="info-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Blood Pressure Categories</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <p>Blood pressure is categorized into four main types:</p>
+            <ul style="margin: 15px 0 15px 20px;">
+                <li><strong>Normal:</strong> Less than 120/80 mm Hg</li>
+                <li><strong>Elevated:</strong> Systolic between 120-129 and diastolic less than 80</li>
+                <li><strong>High Stage 1:</strong> Systolic between 130-139 or diastolic between 80-89</li>
+                <li><strong>High Stage 2:</strong> Systolic 140 or higher or diastolic 90 or higher</li>
+                <li><strong>Hypertensive Crisis:</strong> Systolic over 180 and/or diastolic over 120</li>
+            </ul>
+            <p>Consult with your healthcare provider for proper diagnosis and treatment.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const bpForm = document.getElementById('bp-form');
+        const sysInput = document.getElementById('sys');
+        const diaInput = document.getElementById('dia');
+        const pulseInput = document.getElementById('pulse');
+        const notesInput = document.getElementById('notes');
+        const bpResult = document.getElementById('bp-result');
+        const currentDateEl = document.getElementById('current-date');
+        const lastReadingEl = document.getElementById('last-reading');
+        const readingsCountEl = document.getElementById('readings-count');
+        const historyList = document.getElementById('history-list');
+        const avgSysEl = document.getElementById('avg-sys');
+        const avgDiaEl = document.getElementById('avg-dia');
+        const avgPulseEl = document.getElementById('avg-pulse');
+        
+        // Set current date
+        currentDateEl.textContent = new Date().toLocaleDateString();
+        
+        // Initialize Chart.js
+        const ctx = document.getElementById('bp-chart').getContext('2d');
+        const bpChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Systolic (SYS)',
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        tension: 0.3,
+                        data: []
+                    },
+                    {
+                        label: 'Diastolic (DIA)',
+                        borderColor: '#3a0ca3',
+                        backgroundColor: 'rgba(58, 12, 163, 0.1)',
+                        tension: 0.3,
+                        data: []
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day'
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 60,
+                        suggestedMax: 180
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Initialize data storage
+        let readings = JSON.parse(localStorage.getItem('bpReadings')) || [];
+        
+        // Update UI with stored data
+        updateUI();
+        
+        // Form submission handler
+        bpForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sys = parseInt(sysInput.value);
+            const dia = parseInt(diaInput.value);
+            const pulse = parseInt(pulseInput.value);
+            const notes = notesInput.value;
+            const timestamp = new Date().toISOString();
+            
+            // Validate input
+            if (sys <= dia) {
+                showResult('Error: Systolic must be greater than diastolic', 'very-high');
+                return;
+            }
+            
+            // Create new reading object
+            const newReading = {
+                sys,
+                dia,
+                pulse,
+                notes,
+                timestamp,
+                moyenne: calculateMoyenne(sys, dia)
+            };
+            
+            // Add to readings array
+            readings.push(newReading);
+            
+            // Save to localStorage
+            localStorage.setItem('bpReadings', JSON.stringify(readings));
+            
+            // Update UI
+            updateUI();
+            
+            // Reset form
+            bpForm.reset();
+            
+            // Show success message
+            showResult('Reading saved successfully!', 'normal');
+        });
+        
+        // Calculate moyenne (x/y format)
+        function calculateMoyenne(sys, dia) {
+            return `${sys}/${dia}`;
+        }
+        
+        // Analyze BP and return status
+        function analyzeBP(sys, dia) {
+            if (sys >= 140 || dia >= 90) {
+                return { status: 'High', level: 'high', message: 'High blood pressure. Please consult your doctor.' };
+            } else if (sys >= 130 || dia >= 80) {
+                return { status: 'Elevated', level: 'elevated', message: 'Elevated blood pressure. Monitor regularly.' };
+            } else if (sys >= 120) {
+                return { status: 'Normal', level: 'normal', message: 'Normal blood pressure. Keep it up!' };
+            } else {
+                return { status: 'Ideal', level: 'normal', message: 'Ideal blood pressure. Excellent!' };
+            }
+        }
+        
+        // Show result with appropriate styling
+        function showResult(message, level) {
+            bpResult.textContent = message;
+            bpResult.className = 'bp-status ' + level;
+        }
+        
+        // Update all UI elements with current data
+        function updateUI() {
+            // Update readings count
+            readingsCountEl.textContent = readings.length;
+            
+            // Update last reading
+            if (readings.length > 0) {
+                const lastReading = readings[readings.length - 1];
+                lastReadingEl.textContent = `${lastReading.sys}/${lastReading.dia}`;
+                
+                // Analyze last reading
+                const analysis = analyzeBP(lastReading.sys, lastReading.dia);
+                showResult(`${analysis.status}: ${analysis.message}`, analysis.level);
+            } else {
+                lastReadingEl.textContent = '--/--';
+                showResult('Enter your reading to see analysis', '');
+            }
+            
+            // Update history list
+            updateHistoryList();
+            
+            // Update averages
+            updateAverages();
+            
+            // Update chart
+            updateChart();
+        }
+        
+        // Update history list
+        function updateHistoryList() {
+            historyList.innerHTML = '';
+            
+            if (readings.length === 0) {
+                historyList.innerHTML = '<li class="history-item"><span class="history-date">No data yet</span><span class="history-value">--/--</span></li>';
+                return;
+            }
+            
+            // Show last 7 readings
+            const recentReadings = readings.slice(-7).reverse();
+            
+            recentReadings.forEach(reading => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                
+                const date = new Date(reading.timestamp).toLocaleDateString();
+                const analysis = analyzeBP(reading.sys, reading.dia);
+                
+                li.innerHTML = `
+                    <span class="history-date">${date}</span>
+                    <span class="history-value ${analysis.level}">${reading.sys}/${reading.dia}</span>
+                `;
+                
+                historyList.appendChild(li);
+            });
+        }
+        
+        // Update averages
+        function updateAverages() {
+            if (readings.length < 3) {
+                avgSysEl.textContent = '--';
+                avgDiaEl.textContent = '--';
+                avgPulseEl.textContent = '--';
+                return;
+            }
+            
+            // Calculate averages from last 3 readings
+            const lastThree = readings.slice(-3);
+            
+            const avgSys = Math.round(lastThree.reduce((sum, reading) => sum + reading.sys, 0) / 3);
+            const avgDia = Math.round(lastThree.reduce((sum, reading) => sum + reading.dia, 0) / 3);
+            const avgPulse = Math.round(lastThree.reduce((sum, reading) => sum + reading.pulse, 0) / 3);
+            
+            avgSysEl.textContent = avgSys;
+            avgDiaEl.textContent = avgDia;
+            avgPulseEl.textContent = avgPulse;
+        }
+        
+        // Update chart
+        function updateChart() {
+            // Clear current data
+            bpChart.data.datasets[0].data = [];
+            bpChart.data.datasets[1].data = [];
+            
+            // Add new data points
+            readings.forEach(reading => {
+                const date = new Date(reading.timestamp);
+                
+                bpChart.data.datasets[0].data.push({
+                    x: date,
+                    y: reading.sys
+                });
+                
+                bpChart.data.datasets[1].data.push({
+                    x: date,
+                    y: reading.dia
+                });
+            });
+            
+            // Update chart
+            bpChart.update();
+        }
+        
+        // Initialize with some sample data if empty
+        if (readings.length === 0) {
+            const now = new Date();
+            
+            // Add sample data for the past 7 days
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                
+                // Generate realistic BP values
+                const sys = Math.floor(Math.random() * 30) + 110; // 110-140
+                const dia = Math.floor(Math.random() * 20) + 70;  // 70-90
+                const pulse = Math.floor(Math.random() * 30) + 60; // 60-90
+                
+                readings.push({
+                    sys,
+                    dia,
+                    pulse,
+                    notes: i === 0 ? 'Morning reading' : '',
+                    timestamp: date.toISOString(),
+                    moyenne: calculateMoyenne(sys, dia)
+                });
+            }
+            
+            localStorage.setItem('bpReadings', JSON.stringify(readings));
+            updateUI();
+        }
+    </script>
+</body>
+</html>
